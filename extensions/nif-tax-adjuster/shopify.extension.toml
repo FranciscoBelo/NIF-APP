@@ -7,7 +7,7 @@ handle = "nif-tax-adjuster"
 description = "Ajusta impostos baseado no tipo de cliente (B2B/B2C)"
 
 [[extensions.targeting]]
-target = "purchase.checkout.delivery-customization.run"
+target = "purchase.cart-transform.run"
 
 [build]
 command = "npm run build"

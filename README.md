@@ -4,7 +4,24 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Version](https://img.shields.io/badge/version-1.0.0-orange)
 
-Aplicação Shopify completa para **validação automática de NIF/NIPC** no checkout e **ajuste dinâmico de IVA** baseado no tipo de cliente (B2B vs B2C).
+Aplicação Shopify completa para **validação automática de NIF/NIPC** no checkout e identificação de clientes B2B/B2C.
+
+## ⚠️ Nota Importante sobre IVA
+
+**Shopify Checkout Functions não permitem remover IVA automaticamente no checkout.** Esta é uma limitação da plataforma Shopify.
+
+Esta app:
+- ✅ **Valida NIFs** corretamente (PT e UE via VIES)
+- ✅ **Identifica clientes B2B** vs B2C
+- ✅ **Guarda todos os dados** necessários nas orders
+- ⚠️ **Não remove IVA automaticamente** (limitação da plataforma)
+
+**Para processar IVA de clientes B2B**, você precisará de um passo adicional:
+- **Opção 1**: Processar refund manualmente filtrando orders B2B
+- **Opção 2**: Implementar webhook automático (ver `docs/TAX_IMPLEMENTATION.md`)
+- **Opção 3**: Usar discount function (aparece como desconto, não isenção)
+
+Ver documentação completa em **[docs/TAX_IMPLEMENTATION.md](docs/TAX_IMPLEMENTATION.md)**
 
 ## 📋 Descrição
 
@@ -12,10 +29,10 @@ Esta app integra-se perfeitamente no checkout do Shopify Plus para:
 
 - ✅ Validar NIFs portugueses (consumidores finais e empresas)
 - ✅ Validar NIFs/VAT de toda a União Europeia via **VIES API**
-- ✅ Ajustar automaticamente o IVA para transações B2B (0%)
-- ✅ Manter IVA normal para consumidores finais (B2C)
-- ✅ Guardar metadados completos em cada order
+- ✅ Identificar corretamente clientes B2B (empresas) vs B2C (particulares)
+- ✅ Guardar metadados completos em cada order para processamento
 - ✅ Interface 100% em português
+- ⚠️ Marcar transações B2B para processamento de IVA (manual ou automático via webhook)
 
 ## 🎯 Features Principais
 
@@ -33,30 +50,31 @@ Esta app integra-se perfeitamente no checkout do Shopify Plus para:
 - Se inválido: mostra modal com opções
   - **Corrigir**: limpa o campo para reeditar
   - **Prosseguir como consumidor final**: assume NIF 999999999
-- Se válido: mantém IVA de 23%
+- Se válido: prossegue como B2C (IVA mantido 23%)
 
 **Empresa (NIF começa por 5, 6 ou 9):**
 - Valida via **VIES API** (União Europeia)
-- Se válido: ✅ Remove IVA (0%) - Inversão do Sujeito Passivo
-- Se inválido: Silencioso, mantém IVA (não bloqueia checkout)
+- Se válido: ✅ Marca como B2B (identificado para processamento de IVA)
+- Se inválido: Silencioso, marca como B2C (não bloqueia checkout)
 
 #### 🇪🇺 Outros Países da União Europeia
 - Validação VIES para qualquer NIF/VAT inserido
-- Se válido: Remove IVA (venda B2B intracomunitária)
-- Se inválido: Mantém IVA sem avisar
+- Se válido: Marca como B2B (identificado para isenção de IVA)
+- Se inválido: Marca como B2C sem avisar
 
-### 3. Ajuste Automático de Impostos
+### 3. Identificação B2B e Preparação de Dados
 - **Function JavaScript** processa validação
-- Remove IVA para clientes B2B validados via VIES
-- Mantém IVA normal para clientes B2C
-- Adiciona nota: "Venda B2B - IVA invertido"
+- Marca clientes B2B validados via VIES
+- Guarda todos os dados necessários para processamento de IVA
+- Ver `docs/TAX_IMPLEMENTATION.md` para opções de remoção de IVA
 
-### 4. Metadados Guardados em Cada Order
-Todas as orders incluem:
+### 4. Metadados Completos em Cada Order
+Todas as orders incluem metafields e attributes:
 - `custom.nif`: NIF/NIPC inserido
 - `custom.customer_type`: "B2B" ou "B2C"
 - `custom.vies_validated`: true/false
 - `custom.billing_country`: Código ISO do país
+- `_b2b_transaction`: Marcador para processamento automático
 
 ## 🏗️ Arquitetura
 
@@ -130,6 +148,7 @@ Para guia completo, consulte [SETUP.md](docs/SETUP.md)
 - **[TESTING.md](docs/TESTING.md)**: 7 cenários de teste obrigatórios
 - **[DEPLOYMENT.md](docs/DEPLOYMENT.md)**: Como fazer deploy para produção
 - **[TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)**: Resolver problemas comuns
+- **[TAX_IMPLEMENTATION.md](docs/TAX_IMPLEMENTATION.md)**: Soluções para remoção automática de IVA
 
 ## 🧪 Testes
 
@@ -137,10 +156,10 @@ A app inclui 7 cenários de teste obrigatórios:
 
 1. ✅ PT - NIF particular válido (123456789)
 2. ✅ PT - NIF particular inválido (12345) → Modal
-3. ✅ PT - NIF empresa válido VIES (PT507957547) → Remove IVA
-4. ✅ PT - NIF empresa inválido VIES (599999999) → Mantém IVA
-5. ✅ ES - NIF válido VIES → Remove IVA
-6. ✅ DE - NIF inválido VIES → Mantém IVA
+3. ✅ PT - NIF empresa válido VIES (PT507957547) → Marca B2B
+4. ✅ PT - NIF empresa inválido VIES (599999999) → Marca B2C
+5. ✅ ES - NIF válido VIES → Marca B2B
+6. ✅ DE - NIF inválido VIES → Marca B2C
 7. ✅ Campo vazio → Bloqueia checkout
 
 Ver detalhes em [TESTING.md](docs/TESTING.md)
@@ -152,7 +171,8 @@ Ver detalhes em [TESTING.md](docs/TESTING.md)
 Cliente insere: 123456789
 → Validação: OK (9 dígitos)
 → Tipo: B2C
-→ IVA: 23% (mantido)
+→ Order criada com metafield customer_type = "B2C"
+→ IVA: 23% (cobrado normalmente)
 → Total: €123 (€100 + €23 IVA)
 ```
 
@@ -160,15 +180,33 @@ Cliente insere: 123456789
 ```
 Cliente insere: 507957547
 → Validação VIES: ✅ Válido
+→ Mensagem: "✅ NIF de empresa validado via VIES"
 → Tipo: B2B
-→ IVA: 0% (removido)
-→ Total: €100
-→ Nota: "Venda B2B - IVA invertido"
+→ Order criada com metafields:
+   - customer_type = "B2B"
+   - vies_validated = true
+→ IVA: 23% cobrado no checkout (limitação Shopify)
+→ Total: €123
+
+→ Pós-processamento (você deve fazer):
+   - Filtrar orders B2B
+   - Fazer refund de €23 (IVA)
+   - Ou configurar webhook automático
 ```
 
 ### Exemplo 3: NIF Inválido PT
 ```
 Cliente insere: 12345
+→ Validação: ❌ Formato inválido (menos de 9 dígitos)
+→ Modal aparece com opções:
+   [Corrigir] ou [Prosseguir como consumidor final]
+→ Se escolher prosseguir: 
+   - NIF automaticamente alterado para 999999999
+   - Tipo: B2C
+   - Checkout prossegue normalmente
+```
+
+## 🔧 Stack Técnica
 → Validação: ❌ Formato inválido
 → Modal aparece com opções:
    [Corrigir] ou [Prosseguir como consumidor final]

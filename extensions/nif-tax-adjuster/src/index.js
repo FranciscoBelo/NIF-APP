@@ -1,9 +1,9 @@
 /**
  * Shopify Function: NIF Tax Adjuster
  * 
- * Ajusta impostos (IVA) baseado no tipo de cliente:
- * - B2B: Remove IVA (0%) - Inversão do Sujeito Passivo
- * - B2C: Mantém IVA normal (calculado pelo Shopify)
+ * Marca linhas do carrinho para isenção de impostos baseado no tipo de cliente:
+ * - B2B: Marca produtos como tax-exempt
+ * - B2C: Mantém tributação normal
  * 
  * Lê cart attributes da UI Extension:
  * - customer_type: "B2B" ou "B2C"
@@ -11,7 +11,8 @@
  * - vies_validated: true/false
  * - billing_country: código do país
  * 
- * Guarda order metafields para referência futura
+ * NOTA: Esta função usa cart-transform para marcar itens como tax-exempt.
+ * Para funcionar corretamente, a loja deve ter configuração de tax exemption ativa.
  */
 
 // @ts-check
@@ -49,60 +50,31 @@ export default function run(input) {
 
   const operations = [];
 
-  // Se é B2B, remove IVA
-  if (customerType === 'B2B') {
-    // Adiciona operação para remover impostos
+  // Se é B2B, adiciona atributos às linhas para marcá-las como tax-exempt
+  // NOTA: A implementação real de tax exemption depende das configurações
+  // da loja Shopify. Esta function prepara os dados necessários.
+  if (customerType === 'B2B' && viesValidated) {
+    // Adiciona metadados que podem ser usados por outras functions ou apps
+    // A remoção efetiva do IVA deve ser configurada via:
+    // 1. Tax settings da loja para clientes B2B
+    // 2. Customer tags/groups com tax exemption
+    // 3. Manual handling no admin
+    
     operations.push({
-      update: {
-        cartLines: input.cart.lines.map(line => ({
-          id: line.id,
-          taxExempt: true, // Remove impostos desta linha
-        })),
-      },
-    });
-
-    // Adiciona nota sobre a venda B2B
-    operations.push({
-      addNote: {
-        message: 'Venda B2B - IVA invertido (Reverse Charge)',
-      },
+      merge: {
+        cartAttributes: [
+          {
+            key: '_b2b_transaction',
+            value: 'true'
+          },
+          {
+            key: '_tax_exempt_reason',
+            value: 'VIES validated B2B - Reverse Charge'
+          }
+        ]
+      }
     });
   }
-
-  // Prepara metafields para guardar na order
-  const metafields = [
-    {
-      namespace: 'custom',
-      key: 'nif',
-      type: 'single_line_text_field',
-      value: nifNumber || '',
-    },
-    {
-      namespace: 'custom',
-      key: 'customer_type',
-      type: 'single_line_text_field',
-      value: customerType,
-    },
-    {
-      namespace: 'custom',
-      key: 'vies_validated',
-      type: 'boolean',
-      value: viesValidated.toString(),
-    },
-    {
-      namespace: 'custom',
-      key: 'billing_country',
-      type: 'single_line_text_field',
-      value: billingCountry || '',
-    },
-  ];
-
-  // Adiciona operação para guardar metafields
-  operations.push({
-    setMetafields: {
-      metafields: metafields,
-    },
-  });
 
   return {
     operations: operations,

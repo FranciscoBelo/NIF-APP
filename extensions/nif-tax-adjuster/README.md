@@ -1,6 +1,17 @@
 # NIF Tax Adjuster Function
 
-Esta função do Shopify ajusta automaticamente os impostos (IVA) no checkout baseado no tipo de cliente determinado pela validação de NIF.
+Esta função do Shopify marca transações B2B para processamento de isenção de IVA.
+
+## ⚠️ Limitação Importante
+
+**Shopify Checkout Functions não podem remover IVA automaticamente**. Esta é uma limitação da plataforma, não da nossa app.
+
+Esta function prepara os dados necessários para que o IVA possa ser processado posteriormente via:
+- Refund automático (webhook)
+- Configuração de customer groups
+- Processamento manual
+
+Ver `docs/TAX_IMPLEMENTATION.md` para soluções completas.
 
 ## Funcionamento
 
@@ -12,31 +23,53 @@ A função lê os seguintes **cart attributes** definidos pela UI Extension:
 - `vies_validated`: "true" ou "false" (validação VIES)
 - `billing_country`: Código ISO do país de faturação
 
-### Lógica
-
-**B2B (Empresa validada via VIES):**
-- Remove IVA completamente (0%)
-- Adiciona nota: "Venda B2B - IVA invertido (Reverse Charge)"
-- Aplica regime de inversão do sujeito passivo
-
-**B2C (Consumidor final):**
-- Mantém IVA normal
-- Shopify calcula automaticamente baseado nas regras de impostos
-
 ### Output
 
-A função executa as seguintes operações:
+A função adiciona **cart attributes** adicionais para marcação:
 
-1. **Ajuste de impostos**: Remove ou mantém IVA
-2. **Guardar metafields**: Salva informações na order
-   - `custom.nif`: NIF inserido
-   - `custom.customer_type`: "B2B" ou "B2C"
-   - `custom.vies_validated`: true/false
-   - `custom.billing_country`: Código do país
+- `_b2b_transaction`: "true" (se B2B validado)
+- `_tax_note`: "B2B - IVA invertido (Reverse Charge)"
+
+Estes attributes ficam disponíveis na order e podem ser usados por:
+- Webhooks para processar refund
+- Scripts externos
+- Outros workflows
+
+## O Que Esta Function FAZ
+
+✅ Marca transações B2B validadas via VIES  
+✅ Adiciona informações para processamento posterior  
+✅ Disponibiliza dados nos attributes da order  
+
+## O Que Esta Function NÃO FAZ
+
+❌ Não remove IVA automaticamente no checkout  
+❌ Não cria descontos  
+❌ Não modifica preços  
+
+## Processamento Pós-Checkout
+
+Para remover o IVA, você deve:
+
+### Opção 1: Webhook (Automático)
+```javascript
+// orders/create webhook
+if (order.attributes._b2b_transaction === 'true') {
+  // Refund do IVA
+  createRefund(order.id, order.total_tax);
+}
+```
+
+### Opção 2: Manual
+1. Filtrar orders com `customer_type = B2B`
+2. Fazer refund do valor do IVA
+3. Adicionar nota fiscal
+
+Ver documentação completa em `docs/TAX_IMPLEMENTATION.md`
 
 ## Instalação
 
-A função é automaticamente implantada com a app através do Shopify CLI:
+A função é automaticamente implantada com a app:
 
 ```bash
 npm run deploy
@@ -46,24 +79,8 @@ npm run deploy
 
 1. No Shopify Admin, vá para **Settings > Checkout**
 2. Na seção **Checkout Functions**, ative a função "nif-tax-adjuster"
-3. Configure a prioridade se necessário
 
 ## Verificação
 
-Após uma compra, você pode verificar os metafields da order:
+Após uma compra, verifique os attributes da order no Admin ou via API.
 
-1. Vá para **Orders** no Shopify Admin
-2. Abra uma order
-3. Na seção **Additional details**, veja os metafields customizados
-
-## Troubleshooting
-
-### Função não está removendo IVA
-- Verifique se `customer_type` = "B2B" nos cart attributes
-- Confirme que a função está ativada no Admin
-- Revise os logs da função no Shopify CLI
-
-### Metafields não aparecem
-- Confirme que a função está em execução
-- Verifique se os cart attributes estão sendo definidos pela UI Extension
-- Revise as permissões da app (write_orders)

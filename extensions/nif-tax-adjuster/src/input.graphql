@@ -4,14 +4,21 @@ query Input {
       key
       value
     }
+    buyerIdentity {
+      customer {
+        id
+      }
+    }
     lines {
       id
       quantity
       merchandise {
         ... on ProductVariant {
           id
+          title
           product {
             id
+            title
           }
         }
       }
