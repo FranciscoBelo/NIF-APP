@@ -36,7 +36,7 @@ export async function validateVies(
     countryCode = countryCode.toUpperCase();
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos timeout
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 seconds timeout
     
     const response = await fetch(
       'https://ec.europa.eu/taxation_customs/vies/rest-api/check-vat-number',

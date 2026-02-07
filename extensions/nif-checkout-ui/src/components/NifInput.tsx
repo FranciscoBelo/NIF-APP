@@ -57,7 +57,7 @@ export function NifInput({
 
     const timeoutId = setTimeout(() => {
       validateNif(value);
-    }, 800); // Debounce de 800ms
+    }, 800); // Debounce of 800ms
 
     return () => clearTimeout(timeoutId);
   }, [value, billingCountry]);
