@@ -1,0 +1,31 @@
+{
+  "name": "nif-validation-app",
+  "version": "1.0.0",
+  "description": "Shopify App para validação de NIF/NIPC e ajuste automático de IVA para clientes B2B/B2C",
+  "author": "Francisco Belo",
+  "license": "MIT",
+  "keywords": [
+    "shopify",
+    "nif",
+    "vat",
+    "tax",
+    "portugal",
+    "vies"
+  ],
+  "scripts": {
+    "dev": "shopify app dev",
+    "deploy": "shopify app deploy",
+    "build": "shopify app build",
+    "info": "shopify app info"
+  },
+  "dependencies": {
+    "@shopify/app": "^3.58.0",
+    "@shopify/cli": "^3.58.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "nif-tax-adjuster",
+  "version": "1.0.0",
+  "description": "Function para ajuste automático de IVA baseado em validação NIF",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

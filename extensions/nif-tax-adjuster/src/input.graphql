@@ -1,0 +1,27 @@
+query Input {
+  cart {
+    attributes {
+      key
+      value
+    }
+    buyerIdentity {
+      customer {
+        id
+      }
+    }
+    lines {
+      id
+      quantity
+      merchandise {
+        ... on ProductVariant {
+          id
+          title
+          product {
+            id
+            title
+          }
+        }
+      }
+    }
+  }
+}

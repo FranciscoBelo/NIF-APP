@@ -1,0 +1,16 @@
+{
+  "nif_field": {
+    "label": "NIF / NIPC",
+    "placeholder": "Insira o seu NIF",
+    "required_error": "O NIF é obrigatório",
+    "format_error": "O NIF inserido não está num formato válido",
+    "validating": "A validar NIF...",
+    "vies_success": "✅ NIF de empresa validado via VIES"
+  },
+  "modal": {
+    "title": "NIF inválido",
+    "message": "O NIF inserido não está num formato válido. Deseja corrigir ou prosseguir como consumidor final?",
+    "button_correct": "Corrigir",
+    "button_proceed": "Prosseguir como consumidor final"
+  }
+}
