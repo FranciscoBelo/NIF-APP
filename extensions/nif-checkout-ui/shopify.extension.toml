@@ -1,0 +1,18 @@
+api_version = "2024-01"
+
+[[extensions]]
+type = "ui_extension"
+name = "nif-checkout-ui"
+handle = "nif-checkout-ui"
+
+[extensions.capabilities]
+network_access = true
+api_access = true
+block_progress = true
+
+[[extensions.targeting]]
+target = "purchase.checkout.block.render"
+
+[build]
+command = "npm run build"
+path = "dist"

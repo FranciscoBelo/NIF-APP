@@ -1,0 +1,14 @@
+api_version = "2024-01"
+
+[[extensions]]
+type = "function"
+name = "nif-tax-adjuster"
+handle = "nif-tax-adjuster"
+description = "Ajusta impostos baseado no tipo de cliente (B2B/B2C)"
+
+[[extensions.targeting]]
+target = "purchase.checkout.delivery-customization.run"
+
+[build]
+command = "npm run build"
+path = "dist/index.js"
